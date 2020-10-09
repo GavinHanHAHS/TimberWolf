@@ -1,0 +1,13 @@
+div.main {
+  width: 900px;
+  margin: auto;
+  text-align: center;
+}
+
+canvas {
+  border: 2px dashed black;
+}
+
+img {
+  display: none;
+}
