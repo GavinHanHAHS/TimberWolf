@@ -5,9 +5,17 @@ div.main {
 }
 
 canvas {
-  border: 2px dashed black;
+  border: 2px dashed white;
+  margin-top: 70px;
 }
 
 img {
   display: none;
+}
+
+body {
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-image: linear-gradient(180deg, rgb(17, 11, 105), rgb(28, 7, 51));
+  height: 98.15vh; /*for some reason it won't fill entire screen unless i do this :/ */
 }
