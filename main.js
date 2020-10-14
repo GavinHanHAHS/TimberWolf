@@ -18,11 +18,17 @@ let logYModify = 0;
 let keydown = false;
 
 for(let i = 0; i < 8; i++) {
+  let branch = Math.round(Math.random() * 3 - 1.5);
+  if(branch == -0) {branch = 0};
+
   logs.push({
     x: (cnv.width / 2) - 75,
     y: 0,
     direction: 0,
-    position: i
+    position: i,
+    angle: 0,
+    angleChange: Math.random() * 10,
+    branch: branch
   })
 }
 
@@ -40,7 +46,8 @@ function start() { // waits for body to load, then loads
   images = {       // images and starts game
     log: document.getElementById("log"),
     stump: document.getElementById("stump"),
-    background: document.getElementById("background")
+    background: document.getElementById("background"),
+    branch: document.getElementById("branch")
   }
 
   requestAnimationFrame(main);
@@ -59,13 +66,44 @@ function main() {
     } else { // otherwise draw it
       if(logs[i].position >= 0) {
         ctx.drawImage(images.log, logs[i].x, 455 - (logs[i].position * 75) - logYModify);
-      } else {
+        if(logs[i].branch != 0) {
+          if(logs[i].branch == -1) {
+            ctx.drawImage(images.branch, logs[i].x + 150, 455 - (logs[i].position * 75) - logYModify);
+          } else if(logs[i].branch == 1) { //redundant
+            ctx.save();
+            ctx.translate(100, 492.5 - (logs[i].position * 75) - logYModify);
+            ctx.rotate(180 * Math.PI / 180);
+            ctx.translate(-(logs[i].x + 75), -(logs[i].y + 37.5));
+            ctx.drawImage(images.branch, logs[i].x, logs[i].y)
+            ctx.restore();
+          }
+          
+        }
+      } else { // flying logs
+        ctx.save();
+        ctx.translate(logs[i].x + 75, logs[i].y + 37.5);
+        ctx.rotate(logs[i].angle * Math.PI / 180);
+        ctx.translate(-(logs[i].x + 75), -(logs[i].y + 37.5));
         ctx.drawImage(images.log, logs[i].x, logs[i].y)
+        if(logs[i].branch != 0) {
+          if(logs[i].branch == -1) {
+            ctx.drawImage(images.branch, logs[i].x + 150, logs[i].y);
+          } else if(logs[i].branch == 1) { //redundant
+            ctx.save();
+            ctx.translate(logs[i].x - 50, logs[i].y - 37.5);
+            ctx.rotate(180 * Math.PI / 180);
+            ctx.translate(-(logs[i].x - 50), -(logs[i].y - 37.5));
+            ctx.drawImage(images.branch, logs[i].x - 100, logs[i].y - 150);
+            ctx.restore();
+          }
+        }
+        ctx.restore();
+        logs[i].angle += logs[i].angleChange * logs[i].direction;
       }
       
       if(logs[i].position < 0) {
-        logs[i].x += 10 * logs[i].direction;
-        logs[i].y += 3.5;
+        logs[i].x += 8 * logs[i].direction;
+        logs[i].y += 5.5;
       }
       
     }
@@ -149,9 +187,16 @@ function logChop(side) {
     }
   }
   // add another log on top
+  let branch = Math.round(Math.random() * 3 - 1.5);
+  if(branch == -0) {branch = 0};
+
   logs.push({
     x: (cnv.width / 2) - 75,
+    y: 0,
     direction: 0,
-    position: 7
+    position: 7,
+    angle: 0,
+    angleChange: Math.random() * 10,
+    branch: branch
   })
 }
