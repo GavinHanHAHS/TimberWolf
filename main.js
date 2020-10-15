@@ -17,7 +17,19 @@ let logs = [];
 let logYModify = 0;
 let keydown = false;
 
-for(let i = 0; i < 8; i++) {
+let playerSide = -1;
+
+logs.push({ // first log always empty
+  x: (cnv.width / 2) - 75,
+  y: 0,
+  direction: 0,
+  position: 0,
+  angle: 0,
+  angleChange: Math.random() * 10,
+  branch: 0
+})
+
+for(let i = 1; i < 8; i++) { // add 7 more logs to complete tree
   let branch = Math.round(Math.random() * 3 - 1.5);
   if(branch == -0) {branch = 0};
 
@@ -27,7 +39,7 @@ for(let i = 0; i < 8; i++) {
     direction: 0,
     position: i,
     angle: 0,
-    angleChange: Math.random() * 10,
+    angleChange: Math.random() * 10 - 5,
     branch: branch
   })
 }
@@ -47,7 +59,8 @@ function start() { // waits for body to load, then loads
     log: document.getElementById("log"),
     stump: document.getElementById("stump"),
     background: document.getElementById("background"),
-    branch: document.getElementById("branch")
+    branch: document.getElementById("branch"),
+    werewolf: document.getElementById("werewolf")
   }
 
   requestAnimationFrame(main);
@@ -79,7 +92,7 @@ function main() {
           }
           
         }
-      } else { // flying logs
+      } else { // draw flying logs
         ctx.save();
         ctx.translate(logs[i].x + 75, logs[i].y + 37.5);
         ctx.rotate(logs[i].angle * Math.PI / 180);
@@ -103,9 +116,8 @@ function main() {
       
       if(logs[i].position < 0) {
         logs[i].x += 8 * logs[i].direction;
-        logs[i].y += 5.5;
+        logs[i].y += logs[i].angleChange * Math.random() + 3;
       }
-      
     }
   }
 
@@ -117,6 +129,9 @@ function main() {
     ctx.fillStyle = "dimgray";
     ctx.fillRect(100, 150, 300, 200);
 
+    //ctx.fillStyle = "slateBlue";
+    //ctx.fillRect(cnv.width / 2 + (135 * playerSide), 475, 40, 40);
+
     ctx.fillStyle = "white";
     ctx.font = "42px Arial Black"
     ctx.fillText("TimberWolf", 115, 210);
@@ -124,9 +139,30 @@ function main() {
     ctx.fillText("Press   <-   /   ->", 115, 270);
     ctx.fillText("or Click Left / Right side", 125, 300, 260);
     ctx.fillText("to Start", 135, 330);
+  } else if(gamestate == 1) {
+    // game is playing
+  } else if(gamestate == 2) { // technically redundant
+    //game over
+    //ctx.fillStyle = "black";
+    //ctx.fillRect(50, 50, cnv.width / 2, cnv.height / 2);
   }
   
+  // draw player
+  ctx.fillStyle = "slateBlue";
+  if(playerSide == -1) {
+    //ctx.fillRect(cnv.width / 2 + (135 * playerSide), 475, 40, 40);
+    ctx.drawImage(images.werewolf, cnv.width / 2 + (275 * playerSide), 275);
+  } else {
+    //ctx.fillRect(cnv.width / 2 + (100 * playerSide), 475, 40, 40);
+    ctx.save();
+    ctx.translate(cnv.width / 2 + (35 * playerSide), 400);
+    ctx.scale(-1, 1)
+    ctx.translate(-(cnv.width / 2 + (35 * playerSide)), -400);
+    ctx.drawImage(images.werewolf, cnv.width / 2 - (215 * playerSide), 275);
+    ctx.restore();
+  }
   
+
 
   requestAnimationFrame(main);
 }
@@ -152,7 +188,7 @@ document.addEventListener("keyup", handleKeyAction);
 
 function handleKeyAction(event) {
   if(event.type === "keydown" && keydown == false) {
-    keydown = true;
+    //keydown = true;
     if(event.code == "ArrowRight") {
       logChop("right");
     } else if(event.code == "ArrowLeft") {
@@ -168,35 +204,54 @@ function logChop(side) {
   if(gamestate == 0) {
     gamestate = 1;
   }
-  logYModify = 75;
-  for(let i = 0; i < logs.length; i++) {
-    // loop thru every log and do logic
-    if(logs[i].position == 0) { // bottommost log gets yeeted
-      logs[i].position = -1;
-      logs[i].y = 455;
-      if(side == "right") { // sends log left
-        logs[i].direction = -1;
-        logs[i].x += -50;
-      } else if(side = "left") { // sends log right
-        logs[i].direction = 1;
-        logs[i].x += 50;
+
+  if(gamestate == 1) {
+    logYModify = 75;
+    for(let i = 0; i < logs.length; i++) {
+      // loop thru every log and do logic
+      if(logs[i].position == 0) { // bottommost log gets yeeted
+        logs[i].position = -1;
+        logs[i].y = 455;
+
+        if(side == "right") { // player is on right side !! log goes left
+          logs[i].direction = -1;
+          logs[i].x += -50;
+          playerSide = 1;
+        } else if(side == "left") { // player is on left side !! log goes right
+          logs[i].direction = 1;
+          logs[i].x += 50;
+          playerSide = -1;
+        }
+      }
+
+      if(logs[i].position > 0) { // all other logs go down
+        logs[i].position -= 1;
       }
     }
-    if(logs[i].position > 0) { // all other logs go down
-      logs[i].position -= 1;
+    //check if new bottom log is on player
+    for(let i = 0; i < logs.length; i++) {
+      if(logs[i].position == 0 && logs[i].branch == playerSide * -1) {
+        //gamestate++;
+        break;
+      }
     }
-  }
-  // add another log on top
-  let branch = Math.round(Math.random() * 3 - 1.5);
-  if(branch == -0) {branch = 0};
+    
+    // add another log on top
+    let branch = Math.round(Math.random() * 3 - 1.5);
+    if(branch == -0) {branch = 0};
 
-  logs.push({
-    x: (cnv.width / 2) - 75,
-    y: 0,
-    direction: 0,
-    position: 7,
-    angle: 0,
-    angleChange: Math.random() * 10,
-    branch: branch
-  })
+    logs.push({
+      x: (cnv.width / 2) - 75,
+      y: 0,
+      direction: 0,
+      position: 7,
+      angle: 0,
+      angleChange: Math.random() * 10 - 5,
+      branch: branch
+    })
+  } else if(gamestate == 2) { //also technically redundant
+    ctx.fillStyle = "black";
+    ctx.fillRect(50, 50, cnv.width - 50, cnv.height - 50);
+  }
+
 }
