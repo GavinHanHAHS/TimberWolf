@@ -19,11 +19,13 @@ let keydown = false;
 
 let playerSide = -1;
 
+let score = 0;
+
 
 // things to do?:
 // day/night cycle
 
-
+window.addEventListener("load", start);
 
 function start() { // waits for body to load, then loads
   images = {       // images and starts game
@@ -36,49 +38,13 @@ function start() { // waits for body to load, then loads
     gameover: document.getElementById("gameover")
   }
 
-  logs.push({ // first log always empty
-    x: (cnv.width / 2) - 75,
-    y: 0,
-    direction: 0,
-    position: 0,
-    angle: 0,
-    angleChange: Math.random() * 10,
-    branch: 0,
-    img: document.getElementById("log")
-  })
-  
-  for(let i = 1; i < 8; i++) { // add 7 more logs to complete tree
-    let log = {
-      x: (cnv.width / 2) - 75,
-      y: 0,
-      direction: 0,
-      position: i,
-      angle: 0,
-      angleChange: Math.random() * 10 - 5,
-      branch: 0,
-      img: document.getElementById("log")
-    };
-
-    log.branch = Math.round(Math.random() * 3 - 1.5);
-    if(log.branch == -0) {log.branch = 0};
-
-    if(Math.random() >= 0.35) {
-      log.img = document.getElementById("log");
-    } else {
-      log.img = document.getElementById("log2");
-    }
-  
-  
-    logs.push(log);
-  }
+  startLogs();
 
   requestAnimationFrame(main);
 }
 
 function main() {
   drawLandscape();
-
-  
 
   for(let i = 0; i < logs.length; i++) { // draw all the logs
     // check if log is offscreen first, if so then delet
@@ -114,66 +80,19 @@ function main() {
         logs[i].angle += logs[i].angleChange * logs[i].direction;
       }
       
-      if(logs[i].position < 0) {
+      if(logs[i].position < 0) { // if log is not in tree, make it move and rotate it.
         logs[i].x += 8 * logs[i].direction;
         logs[i].y += logs[i].angleChange * Math.random() + 3;
       }
     }
   }
 
-  if(logYModify > 0) {
+  if(logYModify > 0) { // if there is empty space below log stack, decrease space.
     logYModify -= 7;
   }
 
-  if(gamestate == 0) {
-    ctx.fillStyle = "dimgray";
-    ctx.fillRect(100, 150, 300, 200);
-
-    ctx.drawImage(images.werewolf, cnv.width / 2 + (225 * playerSide), 400, 200, 150);
-
-    ctx.fillStyle = "white";
-    ctx.font = "42px Arial Black"
-    ctx.fillText("TimberWolf", 115, 210);
-    ctx.font = "22px Arial Black"
-    ctx.fillText("Press   <-   /   ->", 115, 270);
-    ctx.fillText("or Click Left / Right side", 125, 300, 260);
-    ctx.fillText("to Start", 135, 330);
-  } else if(gamestate == 1) {
-    // game is playing
-    if(playerSide == -1) {
-      ctx.drawImage(images.werewolf, cnv.width / 2 + (225 * playerSide), 400, 200, 150);
-    } else {
-      ctx.save();
-      ctx.translate(cnv.width / 2 + (35 * playerSide), 400);
-      ctx.scale(-1, 1)
-      ctx.translate(-(cnv.width / 2 + (35 * playerSide)), -400);
-      ctx.drawImage(images.werewolf, cnv.width / 2 - (155 * playerSide), 400, 200, 150);
-      ctx.restore();
-    }
-  } else if(gamestate == 2) { // technically redundant
-    //game over
-    if(playerSide == -1) {
-      ctx.drawImage(images.tombstone, cnv.width / 2 + (225 * playerSide), 400, 200, 150);
-    } else {
-      ctx.save();
-      ctx.translate(cnv.width / 2 + (35 * playerSide), 400);
-      ctx.scale(-1, 1)
-      ctx.translate(-(cnv.width / 2 + (35 * playerSide)), -400);
-      ctx.drawImage(images.tombstone, cnv.width / 2 - (155 * playerSide), 400, 200, 150);
-      ctx.restore();
-    }
-
-    ctx.fillStyle = "dimGray";
-    ctx.fillRect()
-    ctx.drawImage(images.gameover, 100, 100);
-  }
+  drawGamestate(); // draws any gamestate specific things (menus/player);
   
-  // draw player
-  ctx.fillStyle = "slateBlue";
-
-  
-
-
   requestAnimationFrame(main);
 }
 
@@ -188,7 +107,17 @@ document.addEventListener("keydown", handleKeyAction);
 document.addEventListener("keyup", handleKeyAction);
 
 function handleKeyAction(event) {
-  if(event.type === "keydown" && keydown == false) {
+  if(event.type == "keydown" && event.code == "Space" && gamestate == 2) { // reset variables and add more logs
+    logs = [];
+    logYModify = 0;
+  
+    gamestate = 0;
+    playerSide = -1;
+    score = 0;
+
+    startLogs();
+
+  } else if(event.type === "keydown" && keydown == false) {
     keydown = true;
     if(event.code == "ArrowRight") {
       logChop("right");
@@ -208,6 +137,8 @@ function logChop(side) {
 
   if(gamestate == 1) {
     logYModify = 75;
+    score++;
+
     for(let i = 0; i < logs.length; i++) {
       // loop thru every log and do logic
       if(logs[i].position == 0) { // bottommost log gets yeeted
@@ -237,29 +168,109 @@ function logChop(side) {
       }
     }
     
+    
+
     // add another log on top
-    let branch = Math.round(Math.random() * 3 - 1.5);
-    if(branch == -0) {branch = 0};
-  
-    let log = document.getElementById("log");
-    if(Math.random() > 0.35) {
-      log = document.getElementById("log");
-    } else {
-      log = document.getElementById("log2");
-    }
-  
-  
-    logs.push({
-      x: (cnv.width / 2) - 75,
-      y: 0,
-      direction: 0,
-      position: 7,
-      angle: 0,
-      angleChange: Math.random() * 10 - 5,
-      branch: branch,
-      img: log
-    })
+    addLog(7);
 
   }
 
+}
+
+function startLogs() {
+  logs.push({ // first log always empty
+    x: (cnv.width / 2) - 75,
+    y: 0,
+    direction: 0,
+    position: 0,
+    angle: 0,
+    angleChange: Math.random() * 10,
+    branch: 0,
+    img: document.getElementById("log")
+  });
+  
+  for(let i = 1; i < 8; i++) { // add 7 more logs to complete tree
+    addLog(i);
+  }
+}
+
+function addLog(position) {
+  let log = {
+    x: (cnv.width / 2) - 75,
+    y: 0,
+    direction: 0,
+    position: position,
+    angle: 0,
+    angleChange: Math.random() * 10 - 5,
+    branch: 0,
+    img: document.getElementById("log")
+  };
+
+  log.branch = Math.round(Math.random() * 3 - 1.5);
+
+  if(log.branch == -0) {log.branch = 0};
+
+  if(Math.random() >= 0.35) {
+    log.img = document.getElementById("log");
+  } else {
+    log.img = document.getElementById("log2");
+  }
+
+  logs.push(log);
+}
+
+function drawGamestate() {
+  if(gamestate == 0) { //draw start screen
+    ctx.fillStyle = "dimgray";
+    ctx.fillRect(100, 150, 300, 200);
+
+    ctx.drawImage(images.werewolf, cnv.width / 2 + (225 * playerSide), 400, 200, 175);
+
+    ctx.fillStyle = "white";
+    ctx.font = "42px VT323"
+    ctx.fillText("TimberWolf", 115, 210);
+    ctx.font = "27px VT323"
+    ctx.fillText("Press   <-   /   ->", 115, 250);
+    ctx.fillText("or Click Left / Right side", 125, 280, 260);
+    ctx.fillText("to Start", 135, 310);
+  } else if(gamestate == 1) {
+    // game is playing
+    if(playerSide == -1) { // draw player
+      ctx.drawImage(images.werewolf, cnv.width / 2 + (225 * playerSide), 400, 200, 175);
+    } else {
+      ctx.save();
+      ctx.translate(cnv.width / 2 + (35 * playerSide), 400);
+      ctx.scale(-1, 1)
+      ctx.translate(-(cnv.width / 2 + (35 * playerSide)), -400);
+      ctx.drawImage(images.werewolf, cnv.width / 2 - (155 * playerSide), 400, 200, 175);
+      ctx.restore();
+    }
+
+    ctx.font = "42px VT323";
+    ctx.fillColor = "rgb(235, 235, 172)"
+    ctx.fillText(score, 20, 52);
+  } else if(gamestate == 2) { // technically redundant
+    //game over
+    if(playerSide == -1) { // draw dead player + gameover box
+      ctx.drawImage(images.tombstone, cnv.width / 2 + (225 * playerSide), 400, 200, 175);
+    } else {
+      ctx.save();
+      ctx.translate(cnv.width / 2 + (35 * playerSide), 400);
+      ctx.scale(-1, 1)
+      ctx.translate(-(cnv.width / 2 + (35 * playerSide)), -400);
+      ctx.drawImage(images.tombstone, cnv.width / 2 - (155 * playerSide), 400, 200, 175);
+      ctx.restore();
+    }
+
+    ctx.fillStyle = "rgb(85, 50, 93)";
+    ctx.fillRect(100, 75, 300, 435);
+    ctx.font = "43px VT323";
+    ctx.fillStyle = "rgb(235, 235, 172)";
+    ctx.fillText("Game Over!", 165, 397);
+    ctx.font = "27px VT323"
+    ctx.fillText("Final Score: " + score, 157, 440);
+    ctx.font = "22px VT323";
+    ctx.fillText("Press ⎵ (Space) to restart", 130, 480);
+    ctx.drawImage(images.gameover, 125, 100);
+  }
 }
