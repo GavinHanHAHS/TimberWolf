@@ -177,7 +177,7 @@ function logChop(side) {
 
 }
 
-function startLogs() {
+function startLogs() { //push 7 logs to start it
   logs.push({ // first log always empty
     x: (cnv.width / 2) - 75,
     y: 0,
